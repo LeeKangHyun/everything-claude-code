@@ -50,6 +50,26 @@ Some trailing text`;
   console.log('PASS: extractDiff fallback');
 }
 
+// extractDiff: preserves blank lines inside diff
+{
+  const input = `diff --git a/file.js b/file.js
+--- a/file.js
++++ b/file.js
+@@ -1,5 +1,6 @@
+ function a() {
++  const x = 1;
+
+   return x;
+ }`;
+
+  const result = adapter.extractDiff(input);
+  const resultLines = result.split('\n');
+  assert(resultLines.includes(''), 'Should preserve blank context lines inside diff');
+  assert(result.includes('+  const x = 1;'), 'Should include added line');
+  assert(result.includes('   return x;'), 'Should include context after blank line');
+  console.log('PASS: extractDiff preserves blank lines');
+}
+
 // buildAgentCommand: codex
 {
   const cmd = adapter.buildAgentCommand('codex', 'do something', '/tmp/project');
@@ -59,12 +79,20 @@ Some trailing text`;
   console.log('PASS: buildAgentCommand codex');
 }
 
-// buildAgentCommand: gemini
+// buildAgentCommand: gemini default (no model)
 {
   const cmd = adapter.buildAgentCommand('gemini', 'build UI', '/tmp/app');
   assert(cmd.includes('gemini'), 'Should include gemini command');
   assert(cmd.includes('/tmp/app'), 'Should include cwd');
-  console.log('PASS: buildAgentCommand gemini');
+  assert(!cmd.includes('--model'), 'Should not include --model without option');
+  console.log('PASS: buildAgentCommand gemini default');
+}
+
+// buildAgentCommand: gemini with model
+{
+  const cmd = adapter.buildAgentCommand('gemini', 'build UI', '/tmp/app', { geminiModel: 'gemini-3-pro-preview' });
+  assert(cmd.includes('--model gemini-3-pro-preview'), 'Should include --model flag with value');
+  console.log('PASS: buildAgentCommand gemini with model');
 }
 
 // buildAgentCommand: unsupported backend

@@ -51,12 +51,14 @@ function closeSurface(surfaceId) {
   }
 }
 
-function buildAgentCommand(backend, prompt, cwd) {
+function buildAgentCommand(backend, prompt, cwd, opts = {}) {
   switch (backend) {
     case 'codex':
       return `cd "${cwd}" && codex -q --approval-mode full-auto <<'PROMPT'\n${prompt}\nPROMPT`;
-    case 'gemini':
-      return `cd "${cwd}" && gemini -q <<'PROMPT'\n${prompt}\nPROMPT`;
+    case 'gemini': {
+      const modelFlag = opts.geminiModel ? ` --model ${opts.geminiModel}` : '';
+      return `cd "${cwd}" && gemini${modelFlag} -q <<'PROMPT'\n${prompt}\nPROMPT`;
+    }
     default:
       throw new Error(`Unsupported backend: ${backend}`);
   }
@@ -118,10 +120,15 @@ function extractDiff(rawOutput) {
       inDiff = true;
     }
     if (inDiff) {
-      if (line === '' && !line.startsWith(' ') && !line.startsWith('+') && !line.startsWith('-') && !line.startsWith('@') && !line.startsWith('diff') && !line.startsWith('---') && !line.startsWith('+++')) {
-        inDiff = false;
-      } else {
+      const isDiffLine = line === '' ||
+        line.startsWith(' ') || line.startsWith('+') || line.startsWith('-') ||
+        line.startsWith('@') || line.startsWith('diff') ||
+        line.startsWith('---') || line.startsWith('+++') ||
+        line.startsWith('\\');
+      if (isDiffLine) {
         diffLines.push(line);
+      } else {
+        inDiff = false;
       }
     }
   }

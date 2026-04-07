@@ -196,7 +196,10 @@ async function main() {
   saveSession(sessionId, surfaceId);
 
   // Build and send the agent command
-  const agentCmd = buildAgentCommand(opts.backend, prompt, opts.cwd);
+  const agentCmd = buildAgentCommand(opts.backend, prompt, opts.cwd, {
+    geminiModel: opts.geminiModel,
+    lite: opts.lite
+  });
   sendToSurface(surfaceId, agentCmd + '\n');
 
   log(`[kangto] Waiting for ${opts.backend} to finish...`);
